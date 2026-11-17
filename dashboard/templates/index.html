@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>gap-scanner · paper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Sora:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg0: #e8efe8;
+      --bg1: #d4e2d8;
+      --ink: #14201a;
+      --muted: #4a6356;
+      --line: #a8c0b0;
+      --accent: #0d6b4c;
+      --accent-soft: #c5e6d4;
+      --warn: #9a4d12;
+      --bad: #8b1e2d;
+      --good: #0d6b4c;
+      --panel: rgba(255, 252, 247, 0.78);
+      --shadow: 0 18px 40px rgba(20, 32, 26, 0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      font-family: "Sora", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #f4fff6 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #dcead9 0%, transparent 50%),
+        linear-gradient(165deg, var(--bg0), var(--bg1));
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.35;
+      background-image:
+        linear-gradient(rgba(20, 32, 26, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20, 32, 26, 0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      animation: drift 40s linear infinite;
+    }
+    @keyframes drift {
+      from { background-position: 0 0, 0 0; }
+      to { background-position: 28px 28px, 28px 28px; }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.45; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .wrap {
+      position: relative;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+      animation: rise 0.5s ease-out;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+    }
+    .brand {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin: 0;
+    }
+    .brand span { color: var(--accent); }
+    .tagline {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 36ch;
+    }
+    .status {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: right;
+    }
+    .live-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-right: 6px;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    .badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 8px;
+      border: 1px solid var(--warn);
+      color: var(--warn);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    section {
+      background: var(--panel);
+      backdrop-filter: blur(8px);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(168, 192, 176, 0.55);
+      padding: 18px 18px 14px;
+      animation: rise 0.55s ease-out;
+    }
+    section h2 {
+      margin: 0 0 4px;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+    section p.hint {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .spread-list { display: grid; gap: 10px; }
+    .spread-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(168, 192, 176, 0.55);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.82rem;
+    }
+    .spread-row:first-child { border-top: none; }
+    .pair { font-family: "Sora", sans-serif; font-weight: 700; font-size: 1rem; }
+    .route { color: var(--muted); margin-top: 4px; }
+    .net { text-align: right; font-weight: 600; font-size: 1.05rem; }
+    .net.pos { color: var(--good); }
+    .net.neg { color: var(--bad); }
+    .net.flat { color: var(--muted); }
+    .sub { color: var(--muted); font-size: 0.72rem; margin-top: 4px; text-align: right; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat { padding: 10px; background: var(--accent-soft); }
+    .stat .label {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stat .value {
+      margin-top: 4px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    canvas {
+      width: 100%;
+      height: 180px;
+      display: block;
+      background: linear-gradient(180deg, rgba(197, 230, 212, 0.35), transparent);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px 6px;
+      border-bottom: 1px solid rgba(168, 192, 176, 0.55);
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 0.65rem;
+    }
+    .pos { color: var(--good); }
+    .neg { color: var(--bad); }
+    .scroll { max-height: 280px; overflow: auto; }
+    footer {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1 class="brand">gap<span>-scanner</span></h1>
+        <p class="tagline">Cross-exchange BTC / ETH / SOL spreads with paper fills only.</p>
+        <div class="badge">paper trading · no real orders</div>
+      </div>
+      <div class="status">
+        <div><span class="live-dot"></span>auto-refresh {{ refresh_seconds }}s</div>
+        <div id="cycle">cycles: —</div>
+        <div>threshold: {{ "%.2f"|format(threshold_pct) }}% net</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section>
+        <h2>Live spreads</h2>
+        <p class="hint">Best cross-exchange net after taker fees + withdrawal estimate.</p>
+        <div class="spread-list" id="spreads"></div>
+      </section>
+
+      <section>
+        <h2>Paper P&amp;L</h2>
+        <p class="hint">Simulated fills at quote ± 0.05% slippage.</p>
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Balance</div>
+            <div class="value" id="balance">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Total P&amp;L</div>
+            <div class="value" id="pnl">—</div>
+          </div>
+          <div class="stat">
+            <div class="label">Win rate</div>
+            <div class="value" id="winrate">—</div>
+          </div>
+        </div>
+        <canvas id="equity" width="640" height="180" aria-label="Equity curve"></canvas>
+      </section>
+
+      <section>
+        <h2>Recent opportunities</h2>
+        <p class="hint">Logged when net spread clears the configured threshold.</p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time (UTC)</th>
+                <th>Pair</th>
+                <th>Route</th>
+                <th>Gross</th>
+                <th>Net</th>
+              </tr>
+            </thead>
+            <tbody id="opps"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Paper trades</h2>
+        <p class="hint">Closed simulated arbs with fees and slippage applied.</p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Pair</th>
+                <th>Route</th>
+                <th>P&amp;L</th>
+              </tr>
+            </thead>
+            <tbody id="trades"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      TODO: live trading is out of scope — this UI never submits exchange orders.
+    </footer>
+  </div>
+
+  <script>
+    const fmtPct = (v) => (v == null || Number.isNaN(v)) ? "—" : `${Number(v).toFixed(4)}%`;
+    const fmtUsd = (v) => (v == null || Number.isNaN(v)) ? "—" : `$${Number(v).toFixed(2)}`;
+    const shortTs = (iso) => iso ? iso.replace("T", " ").slice(0, 19) : "—";
+
+    function netClass(v) {
+      if (v == null) return "flat";
+      if (v > 0) return "pos";
+      if (v < 0) return "neg";
+      return "flat";
+    }
+
+    function drawEquity(points) {
+      const canvas = document.getElementById("equity");
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      if (!points || points.length < 2) {
+        ctx.fillStyle = "#4a6356";
+        ctx.font = "12px IBM Plex Mono";
+        ctx.fillText("No closed paper trades yet", 16, h / 2);
+        return;
+      }
+      const vals = points.map(p => p.equity);
+      const min = Math.min(...vals);
+      const max = Math.max(...vals);
+      const span = Math.max(max - min, 1e-9);
+      ctx.beginPath();
+      points.forEach((p, i) => {
+        const x = (i / (points.length - 1)) * (w - 20) + 10;
+        const y = h - 12 - ((p.equity - min) / span) * (h - 24);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = "#0d6b4c";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      const last = points[points.length - 1];
+      const lx = w - 10;
+      const ly = h - 12 - ((last.equity - min) / span) * (h - 24);
+      ctx.beginPath();
+      ctx.arc(lx, ly, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = "#0d6b4c";
+      ctx.fill();
+    }
+
+    async function refresh() {
+      try {
+        const [health, spreads, opps, paper] = await Promise.all([
+          fetch("/api/health").then(r => r.json()),
+          fetch("/api/spreads").then(r => r.json()),
+          fetch("/api/opportunities?limit=40").then(r => r.json()),
+          fetch("/api/paper").then(r => r.json()),
+        ]);
+
+        document.getElementById("cycle").textContent =
+          `cycles: ${health.scanner_cycles ?? 0}` +
+          (health.last_cycle_at ? ` · ${shortTs(health.last_cycle_at)} UTC` : "");
+
+        const box = document.getElementById("spreads");
+        const rows = spreads.spreads || [];
+        box.innerHTML = rows.map(s => {
+          const route = (s.buy_exchange && s.sell_exchange)
+            ? `buy ${s.buy_exchange} → sell ${s.sell_exchange}`
+            : "waiting for books";
+          const prices = (s.ask_price != null && s.bid_price != null)
+            ? `ask ${Number(s.ask_price).toFixed(4)} · bid ${Number(s.bid_price).toFixed(4)}`
+            : "";
+          return `<div class="spread-row">
+            <div>
+              <div class="pair">${s.pair}</div>
+              <div class="route">${route}</div>
+            </div>
+            <div>
+              <div class="net ${netClass(s.net_pct)}">${fmtPct(s.net_pct)}</div>
+              <div class="sub">gross ${fmtPct(s.gross_pct)}${prices ? " · " + prices : ""}</div>
+            </div>
+          </div>`;
+        }).join("") || "<div class='route'>No spread data yet — scanner warming up.</div>";
+
+        const ob = document.getElementById("opps");
+        ob.innerHTML = (opps.opportunities || []).map(o => `<tr>
+          <td>${shortTs(o.ts)}</td>
+          <td>${o.pair}</td>
+          <td>${o.buy_exchange}→${o.sell_exchange}</td>
+          <td>${fmtPct(o.gross_pct)}</td>
+          <td class="${netClass(o.net_pct)}">${fmtPct(o.net_pct)}</td>
+        </tr>`).join("") || "<tr><td colspan='5'>None yet</td></tr>";
+
+        const st = paper.stats || {};
+        document.getElementById("balance").textContent = fmtUsd(st.balance_usd);
+        const pnlEl = document.getElementById("pnl");
+        pnlEl.textContent = fmtUsd(st.total_pnl);
+        pnlEl.className = "value " + netClass(st.total_pnl);
+        document.getElementById("winrate").textContent =
+          st.trades ? `${(st.win_rate * 100).toFixed(1)}% (${st.wins}/${st.trades})` : "—";
+        drawEquity(st.equity_curve || []);
+
+        const tb = document.getElementById("trades");
+        tb.innerHTML = (paper.trades || []).map(t => `<tr>
+          <td>${shortTs(t.ts_close || t.ts_open)}</td>
+          <td>${t.pair}</td>
+          <td>${t.buy_exchange}→${t.sell_exchange}</td>
+          <td class="${netClass(t.pnl_usd)}">${fmtUsd(t.pnl_usd)}</td>
+        </tr>`).join("") || "<tr><td colspan='4'>No paper trades yet</td></tr>";
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    refresh();
+    setInterval(refresh, {{ refresh_seconds }} * 1000);
+  </script>
+</body>
+</html>

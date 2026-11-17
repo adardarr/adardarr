@@ -1,0 +1,53 @@
+# gap-scanner configuration — PAPER TRADING ONLY
+# TODO: Live trading is out of scope. Do not add real-order placement here.
+
+pairs:
+  - BTC/USDT
+  - ETH/USDT
+  - SOL/USDT
+
+exchanges:
+  - binanceus
+  - coinbase
+  - kraken
+  - okx
+
+# Poll interval for public ticker fetches (seconds)
+poll_interval_seconds: 2
+
+# Net spread must exceed this to log an opportunity (0.15% = 0.0015)
+spread_threshold: 0.0015
+
+# Estimated withdrawal / transfer cost as a fraction of notional (applied once per arb)
+withdrawal_cost: 0.0005
+
+# Real taker fees by exchange (fraction of notional). Update if schedules change.
+taker_fees:
+  binanceus: 0.0010   # 0.10%
+  coinbase: 0.0060    # 0.60% (retail taker; VIP tiers lower)
+  kraken: 0.0026      # 0.26%
+  okx: 0.0010         # 0.10%
+
+paper:
+  starting_balance_usd: 1000.0
+  # Simulated fill slippage as fraction of price (0.05%)
+  slippage: 0.0005
+  # Notional size per paper trade (USD)
+  trade_size_usd: 100.0
+  # Max concurrent open paper positions
+  max_open_positions: 3
+
+database:
+  path: data/gap_scanner.db
+
+dashboard:
+  host: 127.0.0.1
+  port: 8000
+  refresh_seconds: 2
+
+# Rate-limit / error handling
+rate_limit:
+  max_retries: 3
+  backoff_seconds: 1.0
+  # Skip an exchange for this many seconds after repeated failures
+  cooldown_seconds: 30
